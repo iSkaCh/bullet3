@@ -1331,10 +1331,10 @@ btSoftBody* btSoftBodyHelpers::CreateFromVtkFile(btSoftBodyWorldInfo& worldInfo,
     psb->initializeDmInverse();
     psb->m_tetraScratches.resize(psb->m_tetras.size());
     psb->m_tetraScratchesTn.resize(psb->m_tetras.size());
-    printf("Nodes:  %u\r\n", psb->m_nodes.size());
-    printf("Links:  %u\r\n", psb->m_links.size());
-    printf("Faces:  %u\r\n", psb->m_faces.size());
-    printf("Tetras: %u\r\n", psb->m_tetras.size());
+    //printf("Nodes:  %u\r\n", psb->m_nodes.size());
+    //printf("Links:  %u\r\n", psb->m_links.size());
+    //printf("Faces:  %u\r\n", psb->m_faces.size());
+    //printf("Tetras: %u\r\n", psb->m_tetras.size());
 
     fs.close();
     return psb;
@@ -1499,6 +1499,7 @@ void btSoftBodyHelpers::getBarycentricWeights(const btVector3& a, const btVector
     btScalar v6 = btScalar(1) / (vab.cross(vac).dot(vad));
     bary = btVector4(va6*v6, vb6*v6, vc6*v6, vd6*v6);
 }
+
 
 // Iterate through all render nodes to find the simulation tetrahedron that contains the render node and record the barycentric weights
 // If the node is not inside any tetrahedron, assign it to the tetrahedron in which the node has the least negative barycentric weight
