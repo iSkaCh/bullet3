@@ -735,7 +735,7 @@ extern "C"
 	B3_SHARED_API void b3GetAxisDifferenceQuaternion(const double startQuat[/*4*/], const double endQuat[/*4*/], double axisOut[/*3*/]);
 	B3_SHARED_API void b3CalculateVelocityQuaternion(const double startQuat[/*4*/], const double endQuat[/*4*/], double deltaTime, double angVelOut[/*3*/]);
 	B3_SHARED_API void b3RotateVector(const double quat[/*4*/], const double vec[/*3*/], double vecOut[/*3*/]);
-	
+
 #ifdef BT_ENABLE_VHACD
 	B3_SHARED_API void b3VHACD(const char* fileNameInput, const char* fileNameOutput, const char* fileNameLogging,
 		double concavity, double alpha, double beta, double gamma, double minVolumePerCH, int resolution,
@@ -744,10 +744,7 @@ extern "C"
 
 
 #endif
-	B3_SHARED_API int b3GetSoftBodyNodesInfo(b3SharedMemoryStatusHandle statusHandle,int* bodyUniqueId,int* numNodes,struct b3SoftBodyNodeInfo* SoftBodyNodesInfo[]);
-	B3_SHARED_API void b3AddForceSoftBody(b3SharedMemoryCommandHandle commandHandle, int bodyUniqueId, const double* forceArray, const int szForceArray);
-	B3_SHARED_API b3SharedMemoryCommandHandle b3RequestSoftBodyNodesCommandInit(b3PhysicsClientHandle physClient, int bodyUniqueId);
-	B3_SHARED_API b3SharedMemoryCommandHandle b3AddForceSoftBodyCommandInit(b3PhysicsClientHandle physClient);
+
 #ifdef __cplusplus
 }
 #endif

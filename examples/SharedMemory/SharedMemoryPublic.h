@@ -119,8 +119,6 @@ enum EnumSharedMemoryClientCommand
 	CMD_PERFORM_COLLISION_DETECTION,
 	//don't go beyond this command!
 	CMD_MAX_CLIENT_COMMANDS,
-	CMD_REQUEST_SOFT_BODY_NODES_INFO,
-	CMD_ADD_FORCE_SOFT_BODY
 };
 
 enum EnumSharedMemoryServerStatus
@@ -243,13 +241,8 @@ enum EnumSharedMemoryServerStatus
 	CMD_REQUEST_MESH_DATA_FAILED,
 
 	CMD_PERFORM_COLLISION_DETECTION_COMPLETED,
-	CMD_REQUEST_SOFT_BODY_NODES_COMPLETED,
-	CMD_REQUEST_SOFT_BODY_NODES_FAILED,
-	CMD_ADD_FORCE_SOFT_BODY_COMPLETED,
-	CMD_ADD_FORCE_SOFT_BODY_FAILED,
 	//don't go beyond 'CMD_MAX_SERVER_COMMANDS!
 	CMD_MAX_SERVER_COMMANDS
-	
 };
 
 enum JointInfoFlags
@@ -365,15 +358,6 @@ struct b3BodyInfo
 {
 	char m_baseName[1024];
 	char m_bodyName[1024];  // for btRigidBody, it does not have a base, but can still have a body name from urdf
-};
-struct b3SoftBodyNodeInfo
-{
-	int index;
-	float m_im;  //inverse mass
-	float m_x[3];  //position
-	float m_v[3];      //velocity
-	float m_f[3];  //force
-	float m_n[3];
 };
 
 enum DynamicsActivationState

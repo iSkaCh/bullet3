@@ -1147,25 +1147,7 @@ struct b3SendMeshDataArgs
 	int m_startingVertex;
 	int m_numVerticesRemaining;
 };
-/// per node softbody controle
-struct AddForceSoftBody
-{
-	int m_bodyUniqueIds;
-	int m_size;
-	double* m_forceArray;
-};
-struct RequestSoftBodyNodesArgs
-	{
-	int m_bodyUniqueId;
-};
 
-struct SendSoftBodyNodesArgs
-{
-	int m_bodyUniqueId;
-	int m_numLinks;
-	int m_numNodes;
-	struct b3SoftBodyNodeInfo* m_nodesData;
-};
 struct SharedMemoryCommand
 {
 	int m_type;
@@ -1227,8 +1209,6 @@ struct SharedMemoryCommand
 		struct UserDataRequestArgs m_removeUserDataRequestArgs;
 		struct b3CollisionFilterArgs m_collisionFilterArgs;
 		struct b3RequestMeshDataArgs m_requestMeshDataArgs;
-		struct RequestSoftBodyNodesArgs m_requestSoftBodyNodesCommandArgument;
-		struct AddForceSoftBody m_addForceSoftBody;
 	};
 };
 
@@ -1305,7 +1285,6 @@ struct SharedMemoryStatus
 		struct UserDataRequestArgs m_removeUserDataResponseArgs;
 		struct b3ForwardDynamicsAnalyticsArgs m_forwardDynamicsAnalyticsArgs;
 		struct b3SendMeshDataArgs m_sendMeshDataArgs;
-		struct SendSoftBodyNodesArgs m_sendSoftBodyNodesArgs;
 	};
 };
 

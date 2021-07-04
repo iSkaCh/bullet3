@@ -1516,30 +1516,6 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus()
 				b3Warning("Adding user data failed (do the specified body and link exist?)");
 				break;
 			}
-						case CMD_REQUEST_SOFT_BODY_NODES_FAILED:
-			{
-				B3_PROFILE("GET SOFT BODY NODES FAILED");
-				//b3Warning("Softbody nodes request failed");
-				break;
-			}
-			case CMD_REQUEST_SOFT_BODY_NODES_COMPLETED:
-			{
-				B3_PROFILE("GET SOFT BODY NODES COMPLETED");
-				//b3Printf("Softbody nodes request completed!");
-				break;
-			}
-			case CMD_ADD_FORCE_SOFT_BODY_COMPLETED:
-			{
-				B3_PROFILE("ADD FORCE SOFT BODY COMPLETED");
-				//b3Printf("Add force Softbody request completed!");
-				break;
-			}
-			case CMD_ADD_FORCE_SOFT_BODY_FAILED:
-			{
-				B3_PROFILE("ADD FORCE SOFT BODY FAILED");
-				//b3Warning("Add force Softbody request FAILED!");
-				break;
-			}
 			case CMD_REMOVE_USER_DATA_FAILED:
 			{
 				b3Warning("Removing user data failed");
