@@ -12416,8 +12416,119 @@ static PyObject* pybullet_calculateMassMatrix(PyObject* self, PyObject* args, Py
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+///softbody node controle functions 
+static PyObject* pybullet_getSoftBodyNodes(PyObject* self, PyObject* args, PyObject* keywds)
+{
+	{
+		int bodyUniqueId = -1;
+		b3PhysicsClientHandle sm = 0;
 
+		int physicsClientId = 0;
+		static char* kwlist[] = {"bodyUniqueId", "physicsClientId", NULL};
+		if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|i", kwlist, &bodyUniqueId, &physicsClientId))
+		{
+			PyErr_SetString(SpamError, "arguments error");
+			return NULL;
+		}
+		sm = getPhysicsClient(physicsClientId);
+		if (sm == 0)
+		{
+			PyErr_SetString(SpamError, "Not connected to physics server.");
+			return NULL;
+		}
 
+		{
+			b3SharedMemoryCommandHandle cmd_handle =
+				b3RequestSoftBodyNodesCommandInit(sm, bodyUniqueId);
+			b3SharedMemoryStatusHandle status_handle =
+				b3SubmitClientCommandAndWaitStatus(sm, cmd_handle);
+			const int status_type = b3GetStatusType(status_handle);
+			if (status_type != CMD_REQUEST_SOFT_BODY_NODES_COMPLETED)
+			{
+				PyErr_SetString(SpamError, "getSoftBodyNodes not completed.");
+				return 0;
+			}
+			
+			struct b3SoftBodyNodeInfo* SoftBodyNodesInfo;
+			int numNodes = 0;
+		
+			if (0 == b3GetSoftBodyNodesInfo(status_handle, bodyUniqueId, &numNodes, &SoftBodyNodesInfo))
+			{
+				PyErr_SetString(SpamError, "getSoftBodyNodes failed.");
+				return NULL;
+			}
+
+			{
+				PyObject* pylist = PyTuple_New(numNodes);
+				for (int n = 0; n < numNodes; n++)
+				{
+					PyObject* pynodeInfo = 0;
+					pynodeInfo = Py_BuildValue("{s:i,s:f,s:[f,f,f],s:[f,f,f],s:[f,f,f],s:[f,f,f]}",
+											   "index", SoftBodyNodesInfo[n].index,
+											   "inverseMass", SoftBodyNodesInfo[n].m_im,
+											   "position", SoftBodyNodesInfo[n].m_x[0], SoftBodyNodesInfo[n].m_x[1], SoftBodyNodesInfo[n].m_x[2],
+											   "velocity", SoftBodyNodesInfo[n].m_v[0], SoftBodyNodesInfo[n].m_v[1], SoftBodyNodesInfo[n].m_v[2],
+											   "normal", SoftBodyNodesInfo[n].m_n[0], SoftBodyNodesInfo[n].m_n[1], SoftBodyNodesInfo[n].m_n[2],
+											   "force", SoftBodyNodesInfo[n].m_f[0], SoftBodyNodesInfo[n].m_f[1], SoftBodyNodesInfo[n].m_f[2]
+
+					);
+
+					PyTuple_SetItem(pylist, n, pynodeInfo);
+				}
+				return pylist;
+			}
+		}
+	}
+	PyErr_SetString(SpamError, "Couldn't get soft body nodes");
+	return NULL;
+}
+static PyObject* pybullet_addforceSoftBody(PyObject* self, PyObject* args, PyObject* keywds)
+{
+	int bodyUniqueId;
+	PyObject* objForce;
+	int physicsClientId = 0;
+	b3PhysicsClientHandle sm = 0;
+	b3SharedMemoryCommandHandle command;
+	b3SharedMemoryStatusHandle statusHandle;
+	
+	static char* kwlist[] = {"bodyUniqueId", "objPositions", "physicsClientId", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "iO|i", kwlist,
+									 &bodyUniqueId, &objForce, &physicsClientId))
+	{
+		PyErr_SetString(SpamError, "arguments error");
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	{
+		int szForceArray = PySequence_Size(objForce);
+		if (szForceArray >= 0)
+		{
+			int byteSizeForces = sizeof(double) * szForceArray ;
+			double* forceArray = (double*)malloc(byteSizeForces);
+			int i; 
+			for (i= 0; i < szForceArray; i++)
+			{
+				
+				forceArray[i] = pybullet_internalGetFloatFromSequence(objForce, i);
+
+			}
+
+			command = b3AddForceSoftBodyCommandInit (sm);
+			
+			b3AddForceSoftBody(command, bodyUniqueId, forceArray, szForceArray);
+			statusHandle = b3SubmitClientCommandAndWaitStatus(sm, command);
+			
+		
+		}
+	Py_INCREF(Py_None);
+	return Py_None;
+	}
+}
 
 static PyMethodDef SpamMethods[] = {
 
@@ -12959,6 +13070,11 @@ static PyMethodDef SpamMethods[] = {
 
 	{"setTimeOut", (PyCFunction)pybullet_setTimeOut, METH_VARARGS | METH_KEYWORDS,
 	 "Set the timeOut in seconds, used for most of the API calls."},
+	 
+	{"getSoftBodyNodes", (PyCFunction)pybullet_getSoftBodyNodes, METH_VARARGS | METH_KEYWORDS,
+	 "Get the soft body nodes, given a body unique id."},
+	{"addforceSoftBody", (PyCFunction)pybullet_addforceSoftBody, METH_VARARGS | METH_KEYWORDS,
+	 "Get the soft body nodes, given a body unique id."},
 
 #ifdef BT_ENABLE_VHACD
 	{"vhacd", (PyCFunction)pybullet_vhacd, METH_VARARGS | METH_KEYWORDS,

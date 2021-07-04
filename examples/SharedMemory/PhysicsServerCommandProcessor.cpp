@@ -11654,6 +11654,7 @@ bool PhysicsServerCommandProcessor::processCalculateMassMatrixCommand(const stru
 	return hasStatus;
 }
 
+
 bool PhysicsServerCommandProcessor::processApplyExternalForceCommand(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes)
 {
 	bool hasStatus = true;
@@ -14120,7 +14121,114 @@ bool PhysicsServerCommandProcessor::processSaveBulletCommand(const struct Shared
 	serverCmd.m_type = CMD_BULLET_SAVING_FAILED;
 	return hasStatus;
 }
+/// per node soft body controle commands
+bool PhysicsServerCommandProcessor::processRequestSoftBodyNodesInfo(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes)
+{
+	bool hasStatus = true;
+	serverStatusOut.m_type = CMD_REQUEST_SOFT_BODY_NODES_FAILED;
+	BT_PROFILE("CMD_REQUEST_SOFT_BODY_NODES");
+	//	b3Printf("Sending soft body nodes ");
+	if (m_data->m_verboseOutput)
+	{
+		b3Printf("getting soft body nodes ");
+	}
+	int bodyUniqueId = clientCmd.m_requestSoftBodyNodesCommandArgument.m_bodyUniqueId;
+	InternalBodyData* body = m_data->m_bodyHandles.getHandle(bodyUniqueId);
 
+	//we store the state details in the shared memory block, to reduce status size
+	//SendSoftBodyNodesSharedMemoryStorage* stateDetails = (SendSoftBodyNodesSharedMemoryStorage*)bufferServerToClient;
+
+	//make sure the storage fits, otherwise
+	int n = 0;
+
+	if (body && body->m_softBody)
+	{
+		btSoftBody* sb = body->m_softBody;
+		if ((sizeof(b3SoftBodyNodeInfo) * sb->m_nodes.size()) < bufferSizeInBytes)
+		{
+			SharedMemoryStatus& serverCmd = serverStatusOut;
+
+			serverCmd.m_sendSoftBodyNodesArgs.m_bodyUniqueId = bodyUniqueId;
+			serverCmd.m_sendSoftBodyNodesArgs.m_numLinks = 0;
+			serverCmd.m_sendSoftBodyNodesArgs.m_numNodes = sb->m_nodes.size();
+			serverCmd.m_numDataStreamBytes = sizeof(b3SoftBodyNodeInfo) * sb->m_nodes.size();
+
+			serverCmd.m_sendSoftBodyNodesArgs.m_nodesData = new b3SoftBodyNodeInfo[sb->m_nodes.size()];
+			for (n = 0; n < sb->m_nodes.size(); n++)
+			{
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].index = sb->m_nodes[n].index;
+
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_f[0] = sb->m_nodes[n].m_f[0];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_f[1] = sb->m_nodes[n].m_f[1];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_f[2] = sb->m_nodes[n].m_f[2];
+
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_n[0] = sb->m_nodes[n].m_n[0];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_n[1] = sb->m_nodes[n].m_n[1];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_n[2] = sb->m_nodes[n].m_n[2];
+
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_x[0] = sb->m_nodes[n].m_x[0];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_x[1] = sb->m_nodes[n].m_x[1];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_x[2] = sb->m_nodes[n].m_x[2];
+
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_v[0] = sb->m_nodes[n].m_v[0];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_v[1] = sb->m_nodes[n].m_v[1];
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_v[2] = sb->m_nodes[n].m_v[2];
+
+				serverCmd.m_sendSoftBodyNodesArgs.m_nodesData[n].m_im = sb->m_nodes[n].m_im;
+			}
+		/*	b3Printf("----------------------------------");
+			b3Printf("%d", sb->m_nodes.size());
+				for (int i = 0; i < sb->m_faces.size(); i++)
+			{
+				
+				btSoftBody::Node* p1 = sb->m_faces[i].m_n[0];
+				btSoftBody::Node* p2 = sb->m_faces[i].m_n[1];
+				btSoftBody::Node* p3 = sb->m_faces[i].m_n[2];
+				b3Printf("[%d,%d,%d],", p1->index, p2->index, p3->index);
+			}
+			b3Printf("----------------------------------");*/
+			serverCmd.m_type = CMD_REQUEST_SOFT_BODY_NODES_COMPLETED;
+			hasStatus = true;
+		}
+	}
+	else
+	{
+		//b3Warning("Request state but no multibody or rigid body available");
+		SharedMemoryStatus& serverCmd = serverStatusOut;
+		serverCmd.m_type = CMD_REQUEST_SOFT_BODY_NODES_FAILED;
+		hasStatus = true;
+	}
+
+	return hasStatus;
+}
+bool PhysicsServerCommandProcessor::processAddForceSoftBodyCommand(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes)
+{
+	bool hasStatus = true;
+	serverStatusOut.m_type = CMD_ADD_FORCE_SOFT_BODY_FAILED;
+	BT_PROFILE("CMD_ADD_FORCE_SOFT_BODY");
+	InternalBodyData* body = m_data->m_bodyHandles.getHandle(clientCmd.m_addForceSoftBody.m_bodyUniqueIds);
+	if (body && body->m_softBody)
+	{
+		btSoftBody* sb = body->m_softBody;
+		if (clientCmd.m_addForceSoftBody.m_size == sb->m_nodes.size() * 3)
+		{
+			int n;
+			for (n = 0; n < sb->m_nodes.size(); n++)
+			{
+				btVector3 f(clientCmd.m_addForceSoftBody.m_forceArray[n * 3],
+							clientCmd.m_addForceSoftBody.m_forceArray[n * 3 + 1],
+							clientCmd.m_addForceSoftBody.m_forceArray[n * 3 + 2]);
+
+				sb->addVelocity(f * sb->m_nodes[n].m_im * sb->m_sst.sdt, n);
+			}
+
+			SharedMemoryStatus& serverCmd = serverStatusOut;
+			serverCmd.m_type = CMD_ADD_FORCE_SOFT_BODY_COMPLETED;
+		}
+	}
+
+	return hasStatus;
+}
 bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes)
 {
 	//	BT_PROFILE("processCommand");
@@ -14490,6 +14598,16 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
 		case CMD_COLLISION_FILTER:
 		{
 			hasStatus = processCollisionFilterCommand(clientCmd, serverStatusOut, bufferServerToClient, bufferSizeInBytes);
+			break;
+		}
+		case CMD_REQUEST_SOFT_BODY_NODES_INFO:
+		{
+			hasStatus = processRequestSoftBodyNodesInfo(clientCmd, serverStatusOut, bufferServerToClient, bufferSizeInBytes);
+			break;
+		}
+		case CMD_ADD_FORCE_SOFT_BODY:
+		{
+			hasStatus = processAddForceSoftBodyCommand(clientCmd, serverStatusOut, bufferServerToClient, bufferSizeInBytes);
 			break;
 		}
 		default:

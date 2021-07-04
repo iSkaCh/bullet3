@@ -6414,4 +6414,80 @@ B3_SHARED_API void b3VHACD(const char* fileNameInput, const char* fileNameOutput
 }
 #endif
 
+/// per node soft body controle
+B3_SHARED_API int b3GetSoftBodyNodesInfo(b3SharedMemoryStatusHandle statusHandle,
+										 int* bodyUniqueId,int* numNodes ,
+										 b3SoftBodyNodeInfo* SoftBodyNodesInfo[])
+{
+	const SharedMemoryStatus* status = (const SharedMemoryStatus*)statusHandle;
+	
+	btAssert(status);
 
+
+	const SendSoftBodyNodesArgs& args = status->m_sendSoftBodyNodesArgs;
+	
+	btAssert(status->m_type == CMD_REQUEST_SOFT_BODY_NODES_COMPLETED);
+	if (status->m_type != CMD_REQUEST_SOFT_BODY_NODES_COMPLETED)
+	{
+		b3Printf("not actually complete %d", status->m_type);
+		return false;
+
+	}
+		
+	
+
+	if (numNodes)
+	{
+		*numNodes = args.m_numNodes;
+	}
+	
+	if (SoftBodyNodesInfo)
+	{
+		b3SoftBodyNodeInfo* nodesData = args.m_nodesData;
+		*SoftBodyNodesInfo = nodesData;
+	}
+	
+	return true;
+}
+B3_SHARED_API b3SharedMemoryCommandHandle b3RequestSoftBodyNodesCommandInit(b3PhysicsClientHandle physClient, int bodyUniqueId)
+{
+	PhysicsClient* cl = (PhysicsClient*)physClient;
+	b3Assert(cl);
+	b3Assert(cl->canSubmitCommand());
+	struct SharedMemoryCommand* command = cl->getAvailableSharedMemoryCommand();
+	b3Assert(command);
+	command->m_type = CMD_REQUEST_SOFT_BODY_NODES_INFO;
+	command->m_updateFlags = 0;
+	command->m_requestSoftBodyNodesCommandArgument.m_bodyUniqueId = bodyUniqueId;
+	return (b3SharedMemoryCommandHandle)command;
+}
+B3_SHARED_API b3SharedMemoryCommandHandle b3AddForceSoftBodyCommandInit(b3PhysicsClientHandle physClient)
+{
+	PhysicsClient* cl = (PhysicsClient*)physClient;
+	b3Assert(cl);
+	b3Assert(cl->canSubmitCommand());
+	struct SharedMemoryCommand* command = cl->getAvailableSharedMemoryCommand();
+	b3Assert(command);
+
+	command->m_type = CMD_ADD_FORCE_SOFT_BODY;
+	command->m_updateFlags = 0;
+	return (b3SharedMemoryCommandHandle)command;
+}
+B3_SHARED_API void b3AddForceSoftBody(b3SharedMemoryCommandHandle commandHandle, int bodyUniqueId, const double* forceArray, const int szForceArray)
+{
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*)commandHandle;
+	b3Assert(command);
+	b3Assert(command->m_type == CMD_ADD_FORCE_SOFT_BODY);
+	
+
+	command->m_addForceSoftBody.m_bodyUniqueIds = bodyUniqueId;
+	command->m_addForceSoftBody.m_size = szForceArray;
+	command->m_addForceSoftBody.m_forceArray = (double*)malloc(sizeof(double) * szForceArray);
+	int i;
+	for (i = 0; i < szForceArray; ++i)
+	{
+		command->m_addForceSoftBody.m_forceArray[ i] = forceArray[i];
+	
+	}
+
+}
